@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz Game</title>
+    <style>
+        :root {
+            --primary: #4a6cf7;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --secondary: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .quiz-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .quiz-body {
+            margin-bottom: 2rem;
+        }
+
+        .question-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .question-container.active {
+            display: block;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        .options-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .option {
+            display: block;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.8rem;
+            background-color: var(--light);
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            background-color: #e9ecef;
+        }
+
+        .option.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .option.correct {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .option.incorrect {
+            background-color: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        input[type="text"].fill-blank {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #3a5bd9;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #25a25a;
+        }
+
+        .results-container {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .results-container h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .score {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+        }
+
+        .feedback {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .answer-review {
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .answer-item {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: var(--light);
+            border-radius: 5px;
+        }
+
+        .correct-answer {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .incorrect-answer {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .quiz-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="header">
+            <h1>Interactive Quiz Game</h1>
+            <p>Test your knowledge with different question types</p>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="quiz-body" id="quiz-body">
+            <!-- Questions will be inserted here -->
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-secondary" id="prev-btn" disabled>Previous</button>
+            <button class="btn btn-primary" id="next-btn">Next</button>
+        </div>
+
+        <div class="results-container" id="results-container">
+            <h2>Quiz Completed!</h2>
+            <div class="score" id="score">Your Score: 0/0</div>
+            <div class="feedback" id="feedback"></div>
+            <div class="answer-review" id="answer-review">
+                <!-- Answer review will be inserted here -->
+            </div>
+            <button class="btn btn-success" id="restart-btn">Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz data
+        const quizData = [
+            {
+                type: "single",
+                question: "What is the capital of France?",
+                options: ["London", "Paris", "Berlin", "Madrid"],
+                answer: "Paris",
+                userAnswer: null
+            },
+            {
+                type: "multiple",
+                question: "Which of these are programming languages? (Select all that apply)",
+                options: ["Python", "HTML", "CSS", "JavaScript"],
+                answer: ["Python", "JavaScript"],
+                userAnswer: []
+            },
+            {
+                type: "fill",
+                question: "The largest planet in our solar system is _____.",
+                answer: "Jupiter",
+                userAnswer: ""
+            },
+            {
+                type: "single",
+                question: "Which company developed React?",
+                options: ["Google", "Facebook", "Microsoft", "Apple"],
+                answer: "Facebook",
+                userAnswer: null
+            },
+            {
+                type: "multiple",
+                question: "Which of these are JavaScript frameworks? (Select all that apply)",
+                options: ["React", "Django", "Vue", "Flask"],
+                answer: ["React", "Vue"],
+                userAnswer: []
+            }
+        ];
+
+        // DOM elements
+        const quizBody = document.getElementById('quiz-body');
+        const progressBar = document.getElementById('progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const resultsContainer = document.getElementById('results-container');
+        const scoreElement = document.getElementById('score');
+        const feedbackElement = document.getElementById('feedback');
+        const answerReview = document.getElementById('answer-review');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Quiz state
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // Initialize the quiz
+        function initQuiz() {
+            renderQuestion(currentQuestionIndex);
+            updateProgress();
+        }
+
+        // Render a question
+        function renderQuestion(index) {
+            const question = quizData[index];
+            let questionHTML = '';
+
+            if (question.type === 'single') {
+                questionHTML = `
+                    <div class="question-container ${index === currentQuestionIndex ? 'active' : ''}">
+                        <div class="question-text">${index + 1}. ${question.question}</div>
+                        <div class="options-container">
+                            ${question.options.map((option, i) => `
+                                <div class="option ${question.userAnswer === option ? 'selected' : ''}" 
+                                     data-option="${option}" onclick="selectOption(event)">
+                                    ${option}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (question.type === 'multiple') {
+                questionHTML = `
+                    <div class="question-container ${index === currentQuestionIndex ? 'active' : ''}">
+                        <div class="question-text">${index + 1}. ${question.question}</div>
+                        <div class="options-container">
+                            ${question.options.map((option, i) => `
+                                <div class="option ${question.userAnswer.includes(option) ? 'selected' : ''}" 
+                                     data-option="${option}" onclick="selectOption(event, true)">
+                                    ${option}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (question.type === 'fill') {
+                questionHTML = `
+                    <div class="question-container ${index === currentQuestionIndex ? 'active' : ''}">
+                        <div class="question-text">${index + 1}. ${question.question}</div>
+                        <input type="text" class="fill-blank" 
+                               value="${question.userAnswer || ''}" 
+                               oninput="updateFillAnswer(this.value)">
+                    </div>
+                `;
+            }
+
+            quizBody.innerHTML = questionHTML;
+            updateControlButtons();
+        }
+
+        // Select an option (single or multiple)
+        function selectOption(event, isMultiple = false) {
+            const optionElement = event.target;
+            const question = quizData[currentQuestionIndex];
+            const selectedOption = optionElement.getAttribute('data-option');
+
+            if (isMultiple) {
+                // For multiple selection
+                if (optionElement.classList.contains('selected')) {
+                    // Remove selection
+                    optionElement.classList.remove('selected');
+                    question.userAnswer = question.userAnswer.filter(opt => opt !== selectedOption);
+                } else {
+                    // Add selection
+                    optionElement.classList.add('selected');
+                    question.userAnswer.push(selectedOption);
+                }
+            } else {
+                // For single selection
+                if (!optionElement.classList.contains('selected')) {
+                    // Remove selection from all options first
+                    document.querySelectorAll('.options-container .option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Add selection to clicked option
+                    optionElement.classList.add('selected');
+                    question.userAnswer = selectedOption;
+                }
+            }
+        }
+
+        // Update fill-in-the-blank answer
+        function updateFillAnswer(value) {
+            quizData[currentQuestionIndex].userAnswer = value;
+        }
+
+        // Update control buttons state
+        function updateControlButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextBtn.textContent = 'Submit';
+            } else {
+                nextBtn.textContent = 'Next';
+            }
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Move to next question
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+                updateProgress();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        // Move to previous question
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion(currentQuestionIndex);
+                updateProgress();
+            }
+        }
+
+        // Finish the quiz and show results
+        function finishQuiz() {
+            // Calculate score
+            score = 0;
+            quizData.forEach(question => {
+                if (question.type === 'single' || question.type === 'fill') {
+                    if (question.userAnswer === question.answer) {
+                        score++;
+                    }
+                } else if (question.type === 'multiple') {
+                    // Check if all correct answers are selected and no incorrect ones
+                    if (question.userAnswer.length === question.answer.length && 
+                        question.answer.every(ans => question.userAnswer.includes(ans))) {
+                        score++;
+                    }
+                }
+            });
+
+            // Display results
+            scoreElement.textContent = `Your Score: ${score}/${quizData.length}`;
+            
+            // Provide feedback
+            const percentage = (score / quizData.length) * 100;
+            if (percentage >= 80) {
+                feedbackElement.textContent = "Excellent! You know your stuff!";
+            } else if (percentage >= 60) {
+                feedbackElement.textContent = "Good job! A little more practice and you'll be an expert!";
+            } else if (percentage >= 40) {
+                feedbackElement.textContent = "Not bad! Keep learning and improving!";
+            } else {
+                feedbackElement.textContent = "Keep practicing! You'll get better with time!";
+            }
+
+            // Show answer review
+            let reviewHTML = '<h3>Answer Review</h3>';
+            quizData.forEach((question, index) => {
+                let userAnswer, correctAnswer;
+                let isCorrect = false;
+
+                if (question.type === 'single' || question.type === 'fill') {
+                    isCorrect = question.userAnswer === question.answer;
+                    userAnswer = question.userAnswer || "No answer";
+                    correctAnswer = question.answer;
+                } else if (question.type === 'multiple') {
+                    isCorrect = question.userAnswer.length === question.answer.length && 
+                                question.answer.every(ans => question.userAnswer.includes(ans));
+                    userAnswer = question.userAnswer.length > 0 ? question.userAnswer.join(", ") : "No answer";
+                    correctAnswer = question.answer.join(", ");
+                }
+
+                reviewHTML += `
+                    <div class="answer-item">
+                        <p><strong>Question ${index + 1}:</strong> ${question.question}</p>
+                        <p class="${isCorrect ? 'correct-answer' : 'incorrect-answer'}">
+                            Your answer: ${userAnswer}
+                        </p>
+                        ${!isCorrect ? `<p class="correct-answer">Correct answer: ${correctAnswer}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            answerReview.innerHTML = reviewHTML;
+
+            // Hide quiz and show results
+            document.querySelector('.quiz-body').style.display = 'none';
+            document.querySelector('.progress-container').style.display = 'none';
+            document.querySelector('.controls').style.display = 'none';
+            resultsContainer.style.display = 'block';
+        }
+
+        // Restart quiz
+        function restartQuiz() {
+            // Reset quiz state
+            currentQuestionIndex = 0;
+            score = 0;
+            quizData.forEach(question => {
+                if (question.type === 'multiple') {
+                    question.userAnswer = [];
+                } else {
+                    question.userAnswer = null;
+                }
+            });
+
+            // Show quiz and hide results
+            document.querySelector('.quiz-body').style.display = 'block';
+            document.querySelector('.progress-container').style.display = 'block';
+            document.querySelector('.controls').style.display = 'flex';
+            resultsContainer.style.display = 'none';
+
+            // Reinitialize quiz
+            initQuiz();
+        }
+
+        // Event listeners
+        nextBtn.addEventListener('click', nextQuestion);
+        prevBtn.addEventListener('click', prevQuestion);
+        restartBtn.addEventListener('click', restartQuiz);
+
+        // Initialize the quiz
+        initQuiz();
+
+        // Make functions available globally
+        window.selectOption = selectOption;
+        window.updateFillAnswer = updateFillAnswer;
+    </script>
+</body>
+</html>
